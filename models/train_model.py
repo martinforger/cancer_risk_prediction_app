@@ -1,5 +1,12 @@
 import sqlite3
 import pandas as pd
+import tensorflow as tf
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Input
+from tensorflow.keras.metrics import AUC
+import joblib
 
 # 1. We start by reading the data from sqlite
 print('Reading data...')
@@ -59,3 +66,79 @@ df.info()
 # We define the goal (liver_cancer)
 X = df.drop('liver_cancer', axis=1)
 y = df['liver_cancer']
+
+# Save for the API
+columns_features = X.columns.tolist()
+print(f"\nFeatures identified ({len(columns_features)}): {columns_features}")
+
+# Divide data to training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Data Scalation
+print("\n--- Data scaling with StandardScaler ---")
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+print("Data escalated correctly.")
+
+# 4. Model Training
+print("\n--- 2. Design of the Multilayer Perceptron (MLP) ---")
+
+model = Sequential()
+
+# Input layer (placeholder)
+model.add(Input(shape=(X_train.shape[1],)))
+
+# Hidden Layers
+model.add(Dense(64, activation='relu'))
+model.add(Dropout(0.3))
+model.add(Dense(32, activation='relu'))
+model.add(Dropout(0.3))
+# Output layer
+# We only used one neuron because it's for binary classification
+# As requested we use sigmoid function (0 to 1 probability)
+model.add(Dense(1, activation='sigmoid'))
+
+model.summary()
+
+# model compilation
+model.compile(loss='binary_crossentropy',
+              optimizer='adam',
+              metrics=['accuracy', AUC(name='auc')]
+              )
+
+print("\n--- 3. Model Training ---")
+history = model.fit(
+    X_train_scaled,
+    y_train,
+    validation_data=(X_test_scaled, y_test),
+    batch_size=32,
+    epochs=100,
+    verbose=1
+)
+
+print("\n--- 4. Model Evaluation ---")
+loss, accuracy, auc = model.evaluate(X_test_scaled, y_test)
+print(f"\nLoss: {loss:.4f}")
+print(f"Accuracy: {accuracy:.4f}")
+print(f"AUC: {auc:.4f}")
+
+# We need to save the model and the scaler
+print("\n--- 5. Model Persistence ---")
+
+# We save the keras model
+model_path = 'cancer_risk_model.keras'
+model.save(model_path)
+print(f"Model saved to: {model_path}")
+
+# Save the scaler
+scaler_path = 'data_scaler.joblib'
+joblib.dump(scaler, scaler_path)
+print(f"Scaler saved in: {scaler_path}")
+
+# Save the column list
+# Would be useful for the API
+cols_path = 'model_columns.joblib'
+joblib.dump(columns_features, cols_path)
+print(f"Model columns saved in: {cols_path}")
