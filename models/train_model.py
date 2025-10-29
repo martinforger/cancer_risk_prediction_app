@@ -7,6 +7,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.layers import Dense, Dropout, Input
 from tensorflow.keras.models import Sequential
+from tensorflow.keras.metrics import AUC
 import keras_tuner as kt
 
 # 1. We start by reading the data from sqlite
@@ -130,7 +131,7 @@ random_tuner = kt.RandomSearch(
     project_name='random_tuner'
 )
 
-random_tuner.search(X_train, y_train, epochs=100, validation_split=0.2)
+random_tuner.search(X_train_scaled, y_train, epochs=100, validation_split=0.2)
 best_hps_random = random_tuner.get_best_hyperparameters(num_trials=1)[0]
 print(f"Best hyperparameters for Random Search: {best_hps_random.values}")
 model = random_tuner.hypermodel.build(best_hps_random)
