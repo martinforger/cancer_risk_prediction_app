@@ -1,12 +1,13 @@
 import sqlite3
+
+import joblib
 import pandas as pd
-import tensorflow as tf
+import keras as keras
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout, Input
-from tensorflow.keras.metrics import AUC
-import joblib
+from tensorflow.keras.models import Sequential
+import keras_tuner as kt
 
 # 1. We start by reading the data from sqlite
 print('Reading data...')
@@ -82,41 +83,57 @@ X_test_scaled = scaler.transform(X_test)
 
 print("Data escalated correctly.")
 
+
 # 4. Model Training
-print("\n--- 2. Design of the Multilayer Perceptron (MLP) ---")
+def build_model(hp):
+    print("\n--- 2. Design of the Multilayer Perceptron (MLP) ---")
+    model = Sequential()
 
-model = Sequential()
+    # Input layer (placeholder)
+    model.add(Input(shape=(X_train.shape[1],)))
+    # Hidden Layers (using hyper
+    model.add(Dense(units=hp.Int('plaf', min_value=32, max_value=128, step=16), activation='relu'))
+    model.add(Dropout(0.3))
+    model.add(Dense(units=hp.Int('plaf', min_value=16, max_value=32, step=16), activation='relu'))
+    model.add(Dropout(0.3))
+    # Output layer
+    # We only used one neuron because it's for binary classification
+    # As requested we use sigmoid function (0 to 1 probability)
+    model.add(Dense(1, activation='sigmoid'))
 
-# Input layer (placeholder)
-model.add(Input(shape=(X_train.shape[1],)))
+    model.summary()
+    hp_learning_rate = hp.Choice('learning_rate', values=[1e-4, 1e-3, 1e-2])
+    # model compilation
+    model.compile(loss='binary_crossentropy',
+                  optimizer=keras.optimizers.Adam(learning_rate=hp_learning_rate),
+                  metrics=['accuracy', AUC(name='auc')]
+                  )
+    # print("\n--- 3. Model Training ---")
+    # history = model.fit(
+    #     X_train_scaled,
+    #     y_train,
+    #     validation_data=(X_test_scaled, y_test),
+    #     batch_size=32,
+    #     epochs=100,
+    #     verbose=1
+    # )
+    return model
 
-# Hidden Layers
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.3))
-model.add(Dense(32, activation='relu'))
-model.add(Dropout(0.3))
-# Output layer
-# We only used one neuron because it's for binary classification
-# As requested we use sigmoid function (0 to 1 probability)
-model.add(Dense(1, activation='sigmoid'))
 
-model.summary()
-
-# model compilation
-model.compile(loss='binary_crossentropy',
-              optimizer='adam',
-              metrics=['accuracy', AUC(name='auc')]
-              )
-
-print("\n--- 3. Model Training ---")
-history = model.fit(
-    X_train_scaled,
-    y_train,
-    validation_data=(X_test_scaled, y_test),
-    batch_size=32,
-    epochs=100,
-    verbose=1
+# For hypertunning we are using random search
+random_tuner = kt.RandomSearch(
+    build_model,
+    objective='val_accuracy',
+    max_trials=10,
+    executions_per_trial=2,
+    directory=f'./tuned_models',
+    project_name='random_tuner'
 )
+
+random_tuner.search(X_train, y_train, epochs=100, validation_split=0.2)
+best_hps_random = random_tuner.get_best_hyperparameters(num_trials=1)[0]
+print(f"Best hyperparameters for Random Search: {best_hps_random.values}")
+model = random_tuner.hypermodel.build(best_hps_random)
 
 print("\n--- 4. Model Evaluation ---")
 loss, accuracy, auc = model.evaluate(X_test_scaled, y_test)
