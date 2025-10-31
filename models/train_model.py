@@ -15,6 +15,7 @@ print('Reading data...')
 conn = sqlite3.connect('synthetic_liver_cancer_dataset.db')
 query = 'SELECT * FROM mytable'
 df = pd.read_sql(query, conn)
+print(df.head())
 
 # 2. Then we continue doing the initial analysis
 print('\n--- 1. Initial Analysis ---')
@@ -109,15 +110,6 @@ def build_model(hp):
                   optimizer=keras.optimizers.Adam(learning_rate=hp_learning_rate),
                   metrics=['accuracy', AUC(name='auc')]
                   )
-    # print("\n--- 3. Model Training ---")
-    # history = model.fit(
-    #     X_train_scaled,
-    #     y_train,
-    #     validation_data=(X_test_scaled, y_test),
-    #     batch_size=32,
-    #     epochs=100,
-    #     verbose=1
-    # )
     return model
 
 
@@ -131,10 +123,10 @@ random_tuner = kt.RandomSearch(
     project_name='random_tuner'
 )
 
-random_tuner.search(X_train_scaled, y_train, epochs=100, validation_split=0.2)
+random_tuner.search(X_train_scaled, y_train, epochs=100, validation_data=(X_test_scaled, y_test))
 best_hps_random = random_tuner.get_best_hyperparameters(num_trials=1)[0]
 print(f"Best hyperparameters for Random Search: {best_hps_random.values}")
-model = random_tuner.hypermodel.build(best_hps_random)
+model = random_tuner.get_best_models()[0]
 
 print("\n--- 4. Model Evaluation ---")
 loss, accuracy, auc = model.evaluate(X_test_scaled, y_test)
@@ -146,17 +138,17 @@ print(f"AUC: {auc:.4f}")
 print("\n--- 5. Model Persistence ---")
 
 # We save the keras model
-model_path = 'cancer_risk_model.keras'
+model_path = '../api/artifacts/cancer_risk_model.keras'
 model.save(model_path)
 print(f"Model saved to: {model_path}")
 
 # Save the scaler
-scaler_path = 'data_scaler.joblib'
+scaler_path = '../api/artifacts/data_scaler.joblib'
 joblib.dump(scaler, scaler_path)
 print(f"Scaler saved in: {scaler_path}")
 
 # Save the column list
 # Would be useful for the API
-cols_path = 'model_columns.joblib'
+cols_path = '../api/artifacts/model_columns.joblib'
 joblib.dump(columns_features, cols_path)
 print(f"Model columns saved in: {cols_path}")
