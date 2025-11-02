@@ -5,6 +5,7 @@ from fastapi import FastAPI
 import keras as keras
 import joblib
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 model = keras.models.load_model('./artifacts/cancer_risk_model.keras')
 scaler = joblib.load('./artifacts/data_scaler.joblib')
@@ -64,3 +65,16 @@ async   def predict(data: PatientData):
 @app.get("/")
 def read_root():
     return {"status": "API de predicción de Cáncer de Hígado está en línea."}
+
+
+origins = [
+    "http://localhost:5173/"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)

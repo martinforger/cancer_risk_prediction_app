@@ -1,0 +1,104 @@
+.patient-form-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 0 12px;
+}
+
+.patient-form {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.patient-form .row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.patient-form label {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-size: 14px;
+}
+
+.patient-form input[type="number"],
+.patient-form select,
+.patient-form input[type="text"] {
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.checkbox-row label {
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  display: flex;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form-actions .primary {
+  background: #2f6fed;
+  color: white;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.form-actions .primary:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.form-actions .secondary {
+  background: transparent;
+  border: 1px solid #ccc;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.result-panel {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 200px;
+  box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.02);
+}
+
+.result-card h2 {
+  margin-top: 0;
+}
+.risk {
+  font-size: 1.25rem;
+  color: #b22222;
+}
+.action {
+  margin-top: 8px;
+}
+.error {
+  color: #b00020;
+  margin-top: 10px;
+}
+.hint {
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 880px) {
+  .patient-form-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
